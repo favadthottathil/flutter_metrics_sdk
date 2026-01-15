@@ -2,11 +2,14 @@ import 'package:dio/dio.dart';
 
 class MetricsClient {
   final Dio _dio;
+  bool _enabled = true;
 
   MetricsClient({
     required String apiKey,
     required String baseUrl,
-  }) : _dio = Dio(
+    bool enabled = true,
+  })  : _enabled = enabled,
+        _dio = Dio(
           BaseOptions(
             baseUrl: baseUrl,
             headers: {
@@ -18,12 +21,17 @@ class MetricsClient {
           ),
         );
 
-  /// Sends a metric safely.
-  /// This method MUST NEVER throw.
+  void enable() => _enabled = true;
+  void disable() => _enabled = false;
+
   Future<void> sendMetric({
     required String event,
     required String screen,
   }) async {
+    if (!_enabled) return;
+
+    if (event.isEmpty || screen.isEmpty) return;
+
     try {
       await _dio.post(
         '/metrics',
@@ -34,7 +42,7 @@ class MetricsClient {
         },
       );
     } catch (_) {
-      // Silent failure by design
+      // Silent failure (by design)
     }
   }
 }
