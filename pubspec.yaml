@@ -1,6 +1,8 @@
 name: flutter_metrics_sdk
-description: Lightweight Flutter analytics SDK using app-level API keys
-version: 0.0.1
+description: >
+  A lightweight Flutter performance analytics SDK to capture real-user
+  metrics such as render time, frame drops, user interactions, and crashes.
+version: 1.0.0
 homepage: null
 
 environment:

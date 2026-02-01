@@ -6,7 +6,7 @@ class ScreenTracker {
 
   ScreenTracker(this._client);
 
-  void track(String screenName) {
+  void trackScreen(String screenName) {
     _client.sendMetric(event: MetricsEvent.screenOpen, screen: screenName);
   }
 }
