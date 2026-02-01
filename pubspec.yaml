@@ -3,11 +3,13 @@ description: >
   A lightweight Flutter performance analytics SDK to capture real-user
   metrics such as render time, frame drops, user interactions, and crashes.
 version: 1.0.0
-homepage: null
+homepage: https://github.com/favadthottathil/flutter_metrics_sdk
+repository: https://github.com/favadthottathil/flutter_metrics_sdk
+issue_tracker: https://github.com/favadthottathil/flutter_metrics_sdk/issues
 
 environment:
-  sdk: ^3.10.7
-  flutter: ">=1.17.0"
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
 
 dependencies:
   dio: ^5.9.0
