@@ -1,4 +1,4 @@
-## 1.0.0
+## 1.0.1
 
 - Initial stable release of Flutter Metrics SDK
 - Supports screen render time tracking
