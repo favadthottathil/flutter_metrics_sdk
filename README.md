@@ -4,6 +4,8 @@ A Flutter performance analytics SDK that captures real-user performance
 metrics and sends them securely to a web-based dashboard for analysis
 and optimization.
 
+---
+
 ## 🚀 Features
 
 - Screen render time tracking
@@ -12,19 +14,27 @@ and optimization.
 - Crash signal reporting
 - Secure API key-based ingestion
 - Non-blocking and production-safe design
+- Supports Android, iOS, and Web
 
-## Installation
+---
+
+## 📦 Installation
+
+Add the dependency to your `pubspec.yaml`:
+
+```yaml
 dependencies:
   flutter_metrics_sdk: ^1.0.0
+```
 
 Then run:
+
+```bash
 flutter pub get
+```
 
-## 🔹 4️⃣ Dashboard Setup Section (VERY IMPORTANT)
+---
 
-👉 **https://ai-performance-intelligence-dashboa.vercel.app**
-
-```md
 ## 🌐 Dashboard Setup (Required)
 
 This SDK integrates with a web-based performance dashboard.
@@ -36,11 +46,14 @@ https://ai-performance-intelligence-dashboa.vercel.app
 1. Create an account on the dashboard
 2. Create an application
 3. Copy the generated API key
-4. Initialize the SDK using the API key and backend URL
+4. Use the API key while initializing the SDK
 
-Backend API URL:
+### Backend API URL
+```
 https://ai-performance-intelligence-backend.onrender.com
+```
 
+---
 
 ## ⚙️ Initialization
 
@@ -49,52 +62,54 @@ final metrics = MetricsClient(
   apiKey: 'app_live_xxxxxxxxx',
   baseUrl: 'https://ai-performance-intelligence-backend.onrender.com',
 );
+```
 
-## 🔹 6️⃣ Usage Section
+---
 
-```md
 ## 🧪 Usage
 
 ### Track screen render time
+```dart
 metrics.sendMetric(
   event: 'screen_render',
   screen: 'home',
   renderTimeMs: 420,
-); 
+);
+```
 
-Track frame drops
+### Track frame drops (UI jank)
+```dart
 metrics.sendMetric(
   event: 'frame_drop',
   screen: 'profile',
   frameTimeMs: 34,
   frameDropped: true,
 );
+```
 
-Track crash signals
+### Track crash signals
+```dart
 FlutterError.onError = (details) {
   metrics.sendMetric(
     event: 'app_crash',
     screen: 'unknown',
   );
 };
+```
 
 ---
 
-### 📄 `LICENSE` (MANDATORY)
+## 🔐 Security
 
-Use **MIT License** (best choice).
-
-Content:
-MIT License
-
-Copyright (c) 2026 Favad T
-
+- Uses app-level API keys for metrics ingestion
+- API keys are generated from the dashboard
+- API keys should not be committed to source control
+- Supports API key rotation
 
 ---
 
-### 📄 `CHANGELOG.md`
+## 🌍 Platform Support
 
-## 1.0.0
-- Initial stable release
-- Performance metrics SDK
-- Supports render time, frame drops, crashes
+- Flutter Android
+- Flutter iOS
+- Flutter Web
