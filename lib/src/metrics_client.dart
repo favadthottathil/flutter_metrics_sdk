@@ -8,15 +8,15 @@ class MetricsClient {
     required String apiKey,
     required String baseUrl,
     bool enabled = true,
-  }) : _enabled = enabled,
-       _dio = Dio(
-         BaseOptions(
-           baseUrl: baseUrl,
-           headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
-           //  connectTimeout: const Duration(seconds: 15),
-           //  receiveTimeout: const Duration(seconds: 15),
-         ),
-       );
+  })  : _enabled = enabled,
+        _dio = Dio(
+          BaseOptions(
+            baseUrl: baseUrl,
+            headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
+            //  connectTimeout: const Duration(seconds: 15),
+            //  receiveTimeout: const Duration(seconds: 15),
+          ),
+        );
 
   void enable() => _enabled = true;
   void disable() => _enabled = false;
@@ -27,26 +27,33 @@ class MetricsClient {
     int? frameTimeMs,
     bool? frameDropped,
     int? renderTimeMs,
+    int? apiLatencyMs,
+    bool? isError,
+    String? errorMessage,
+    String? stackTrace,
+    int? screenLoadTimeMs,
   }) async {
     if (!_enabled) return;
 
     if (event.isEmpty || screen.isEmpty) return;
 
     try {
-      final future = await _dio.post(
+      await _dio.post(
         '/metrics',
         data: {
           'event': event,
           'screen': screen,
-          // 'timestamp': DateTime.now().toIso8601String(),
-          // if (frameTimeMs != null) 'frame_time': frameTimeMs,
-          // if (frameDropped != null) 'frame_dropped': frameDropped,
-          // if (renderTimeMs != null) 'render_time': renderTimeMs,
+          if (frameTimeMs != null) 'frame_time': frameTimeMs,
+          if (frameDropped != null) 'frame_dropped': frameDropped,
+          if (renderTimeMs != null) 'render_time': renderTimeMs,
+          if (apiLatencyMs != null) 'api_latency': apiLatencyMs,
+          if (isError != null) 'is_error': isError,
+          if (errorMessage != null) 'error_message': errorMessage,
+          if (stackTrace != null) 'stack_trace': stackTrace,
+          if (screenLoadTimeMs != null) 'screen_load_time': screenLoadTimeMs,
         },
       );
-      print(future);
     } catch (e) {
-      print(e);
       // Silent failure (by design)
     }
   }

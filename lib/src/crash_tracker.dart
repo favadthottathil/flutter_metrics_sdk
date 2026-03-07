@@ -24,12 +24,9 @@ class CrashTracker {
     client.sendMetric(
       event: MetricsEvent.crash,
       screen: 'global_error_handler',
-      // We might want to pass more details like stack trace in a real app,
-      // but for now keeping it compatible with existing sendMetric signature
-      // or deciding if sendMetric needs to support extra data.
-      // Based on MetricsClient, it only takes event and screen.
-      // So we'll just log the crash event for now.
+      isError: true,
+      errorMessage: error,
+      stackTrace: stack?.toString(),
     );
-    // Ideally we would send the error message and stack trace too.
   }
 }

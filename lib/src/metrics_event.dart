@@ -3,5 +3,7 @@ class MetricsEvent {
   static const screenOpen = 'screen_open';
   static const buttonClick = 'button_click';
   static const apiError = 'api_error';
+  static const apiCall = 'api_call';
   static const crash = 'app_crash';
+  static const appRender = 'app_render';
 }
