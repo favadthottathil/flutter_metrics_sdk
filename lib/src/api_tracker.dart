@@ -2,14 +2,31 @@ import 'package:dio/dio.dart';
 import 'metrics_client.dart';
 import 'metrics_event.dart';
 
+/// A Dio [Interceptor] that measures the latency of every request made
+/// through the interceptor's [Dio] instance and reports it as either an
+/// [MetricsEvent.apiCall] or [MetricsEvent.apiError] event.
+///
+/// Add it to a [Dio] client's interceptors:
+///
+/// ```dart
+/// dio.interceptors.add(ApiMetricsInterceptor(metrics));
+/// ```
 class ApiMetricsInterceptor extends Interceptor {
   final MetricsClient client;
   final Map<RequestOptions, DateTime> _startTimes = {};
+
+  /// Safety cap on the number of in-flight requests tracked at once.
+  /// Prevents unbounded growth if a request never reaches [onResponse]
+  /// or [onError] (e.g. it is dropped without completing).
+  static const int _maxTrackedRequests = 200;
 
   ApiMetricsInterceptor(this.client);
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (_startTimes.length >= _maxTrackedRequests) {
+      _startTimes.remove(_startTimes.keys.first);
+    }
     _startTimes[options] = DateTime.now();
     super.onRequest(options, handler);
   }

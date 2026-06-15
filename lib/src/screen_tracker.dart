@@ -3,6 +3,20 @@ import 'metrics_client.dart';
 import 'metrics_event.dart';
 import 'frame_tracker.dart';
 
+/// A [NavigatorObserver] that automatically reports screen-open and
+/// screen-load-time metrics as routes are pushed and popped.
+///
+/// Register an instance on your app's `Navigator`/`MaterialApp`:
+///
+/// ```dart
+/// MaterialApp(
+///   navigatorObservers: [ScreenTracker(metrics, frameTracker: frameTracker)],
+///   ...
+/// )
+/// ```
+///
+/// If a [FrameTracker] is supplied, it is kept informed of the currently
+/// visible screen so frame-render metrics are attributed correctly.
 class ScreenTracker extends NavigatorObserver {
   final MetricsClient _client;
   final FrameTracker? _frameTracker;
@@ -11,6 +25,11 @@ class ScreenTracker extends NavigatorObserver {
   ScreenTracker(this._client, {FrameTracker? frameTracker})
     : _frameTracker = frameTracker;
 
+  /// Manually reports a [MetricsEvent.screenOpen] event for [screenName]
+  /// and updates the attached [FrameTracker], if any.
+  ///
+  /// Useful for screens not reachable via the [Navigator], such as the
+  /// initial screen shown before the first route is pushed.
   void trackScreen(String screenName) {
     _client.sendMetric(event: MetricsEvent.screenOpen, screen: screenName);
     _frameTracker?.setCurrentScreen(screenName);
