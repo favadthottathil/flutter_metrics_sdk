@@ -1,5 +1,7 @@
 # Flutter Metrics SDK
 
+![Flutter CI](https://github.com/favadthottathil/flutter_metrics_sdk/actions/workflows/ci.yml/badge.svg)
+
 A lightweight Flutter performance analytics SDK that captures real-user
 performance metrics — render time, frame drops, network latency and crash
 signals — and ships them to a backend in efficient, batched requests.
