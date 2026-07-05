@@ -18,7 +18,7 @@ jobs:
           flutter-version: '3.44.3'
           channel: 'stable'
 
-      - uses: action/cache@v3
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.pub-cache
