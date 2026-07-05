@@ -69,7 +69,10 @@ class MetricsClient with WidgetsBindingObserver {
             Dio(
               BaseOptions(
                 baseUrl: baseUrl,
-                headers: {'x-api-key': apiKey, 'Content-Type': 'application/json'},
+                headers: {
+                  'x-api-key': apiKey,
+                  'Content-Type': 'application/json'
+                },
                 connectTimeout: const Duration(seconds: 15),
                 receiveTimeout: const Duration(seconds: 15),
               ),

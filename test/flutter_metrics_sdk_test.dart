@@ -140,9 +140,8 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(adapter.requests, hasLength(1));
-      final metrics =
-          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
-              as List;
+      final metrics = (adapter.requests.single.data
+          as Map<String, dynamic>)['metrics'] as List;
       expect(metrics, hasLength(2));
     });
 
@@ -233,9 +232,8 @@ void main() {
       await client.flush();
 
       expect(adapter.requests, hasLength(1));
-      final metrics =
-          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
-              as List;
+      final metrics = (adapter.requests.single.data
+          as Map<String, dynamic>)['metrics'] as List;
       expect(metrics, hasLength(1));
       expect(metrics.single['event'], MetricsEvent.crash);
     });
@@ -261,9 +259,8 @@ void main() {
       }
       await client.flush();
 
-      final metrics =
-          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
-              as List;
+      final metrics = (adapter.requests.single.data
+          as Map<String, dynamic>)['metrics'] as List;
       expect(metrics, hasLength(5));
     });
   });
@@ -302,9 +299,8 @@ void main() {
       await api.get('/users/42');
       await metrics.flush();
 
-      final batch =
-          (metricsAdapter.requests.single.data as Map<String, dynamic>)[
-              'metrics'] as List;
+      final batch = (metricsAdapter.requests.single.data
+          as Map<String, dynamic>)['metrics'] as List;
       expect(batch, hasLength(1));
       expect(batch.single['event'], MetricsEvent.apiCall);
       expect(batch.single['screen'], '/users/42');
@@ -327,9 +323,8 @@ void main() {
       await expectLater(api.get('/users/42'), throwsA(isA<DioException>()));
       await metrics.flush();
 
-      final batch =
-          (metricsAdapter.requests.single.data as Map<String, dynamic>)[
-              'metrics'] as List;
+      final batch = (metricsAdapter.requests.single.data
+          as Map<String, dynamic>)['metrics'] as List;
       expect(batch, hasLength(1));
       expect(batch.single['event'], MetricsEvent.apiError);
       expect(batch.single['is_error'], true);
@@ -363,9 +358,8 @@ void main() {
 
       await metrics.flush();
 
-      final batch =
-          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
-              as List;
+      final batch = (adapter.requests.single.data
+          as Map<String, dynamic>)['metrics'] as List;
       expect(batch, hasLength(1));
       expect(batch.single['event'], MetricsEvent.crash);
       expect(batch.single['is_error'], true);
