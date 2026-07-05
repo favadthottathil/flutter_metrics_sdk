@@ -20,6 +20,14 @@ jobs:
       
       - run: flutter pub get
 
-      - run: flutter analyze
+      - run: dart format --set-exit-if-changed
 
-      - run: flutter test
+      - run: flutter analyze --fatal-warnings --fatal-infos
+
+      - run: flutter test --coverage
+
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          file: coverage/lcov.info
+          fail_ci_if_error: true

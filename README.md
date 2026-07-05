@@ -2,6 +2,8 @@
 
 ![Flutter CI](https://github.com/favadthottathil/flutter_metrics_sdk/actions/workflows/ci.yml/badge.svg)
 
+![Coverage](https://codecov.io/gh/favadthottathil/flutter_metrics_sdk/branch/main/graph/badge.svg)
+
 A lightweight Flutter performance analytics SDK that captures real-user
 performance metrics — render time, frame drops, network latency and crash
 signals — and ships them to a backend in efficient, batched requests.
@@ -50,15 +52,18 @@ A runnable example app is available in [`example/`](example).
 This SDK integrates with a web-based performance dashboard.
 
 ### Dashboard URL
-https://ai-performance-intelligence-dashboa.vercel.app
+
+<https://ai-performance-intelligence-dashboa.vercel.app>
 
 ### Setup Steps
+
 1. Create an account on the dashboard
 2. Create an application
 3. Copy the generated API key
 4. Use the API key while initializing the SDK
 
 ### Backend API URL
+
 ```
 https://ai-performance-intelligence-backend.onrender.com
 ```
@@ -102,6 +107,7 @@ flush timer.
 ## 🧪 Usage
 
 ### Track a custom event
+
 ```dart
 metrics.sendMetric(
   event: MetricsEvent.buttonClick,
@@ -110,17 +116,20 @@ metrics.sendMetric(
 ```
 
 ### Track network latency
+
 ```dart
 final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
 dio.interceptors.add(ApiMetricsInterceptor(metrics));
 ```
 
 ### Render time & frame drops
+
 Handled automatically once `FrameTracker` and `ScreenTracker` are wired up
 as shown above — `frameDropped` is `true` whenever a frame's build + raster
 time exceeds the configured `frameBudgetMs` (default `16`, i.e. 60fps).
 
 ### Crash reporting
+
 Handled automatically by `CrashTracker.initialize(metrics)`.
 
 ---
