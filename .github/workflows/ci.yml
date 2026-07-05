@@ -43,9 +43,14 @@ jobs:
           file: coverage/lcov.info
           fail_ci_if_error: true
 
+      - run: flutter pub get
+        working-directory: example
+
       - run: flutter build apk --debug
+        working-directory: example
+
       - uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: example/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 7
