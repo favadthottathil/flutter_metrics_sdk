@@ -17,6 +17,17 @@ jobs:
         with: 
           flutter-version: '3.44.3'
           channel: 'stable'
+
+      - uses: action/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-  
+              
+
       
       - run: flutter pub get
 
