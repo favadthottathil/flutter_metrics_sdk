@@ -62,21 +62,22 @@ class MetricsClient with WidgetsBindingObserver {
     double sampleRate = 1.0,
     bool attachLifecycleObserver = true,
     @visibleForTesting Dio? httpClient,
-  })  : _enabled = enabled,
-        _maxBatchSize = maxBatchSize,
-        _sampleRate = sampleRate.clamp(0.0, 1.0),
-        _dio = httpClient ??
-            Dio(
-              BaseOptions(
-                baseUrl: baseUrl,
-                headers: {
-                  'x-api-key': apiKey,
-                  'Content-Type': 'application/json'
-                },
-                connectTimeout: const Duration(seconds: 15),
-                receiveTimeout: const Duration(seconds: 15),
-              ),
-            ) {
+  }) : _enabled = enabled,
+       _maxBatchSize = maxBatchSize,
+       _sampleRate = sampleRate.clamp(0.0, 1.0),
+       _dio =
+           httpClient ??
+           Dio(
+             BaseOptions(
+               baseUrl: baseUrl,
+               headers: {
+                 'x-api-key': apiKey,
+                 'Content-Type': 'application/json',
+               },
+               connectTimeout: const Duration(seconds: 15),
+               receiveTimeout: const Duration(seconds: 15),
+             ),
+           ) {
     _flushTimer = Timer.periodic(flushInterval, (_) => flush());
 
     if (attachLifecycleObserver) {

@@ -23,7 +23,7 @@ class ScreenTracker extends NavigatorObserver {
   final Map<String, DateTime> _routeStartTimes = {};
 
   ScreenTracker(this._client, {FrameTracker? frameTracker})
-      : _frameTracker = frameTracker;
+    : _frameTracker = frameTracker;
 
   /// Manually reports a [MetricsEvent.screenOpen] event for [screenName]
   /// and updates the attached [FrameTracker], if any.

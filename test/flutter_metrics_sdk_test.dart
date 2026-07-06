@@ -70,41 +70,43 @@ void main() {
       expect(adapter.requests, isEmpty);
     });
 
-    test('flush sends a single batched request with all queued metrics',
-        () async {
-      final adapter = _RecordingAdapter();
-      final client = MetricsClient(
-        apiKey: 'test-key',
-        baseUrl: 'https://example.test',
-        httpClient: _dioWithAdapter(adapter),
-        attachLifecycleObserver: false,
-        flushInterval: const Duration(minutes: 5),
-      );
+    test(
+      'flush sends a single batched request with all queued metrics',
+      () async {
+        final adapter = _RecordingAdapter();
+        final client = MetricsClient(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.test',
+          httpClient: _dioWithAdapter(adapter),
+          attachLifecycleObserver: false,
+          flushInterval: const Duration(minutes: 5),
+        );
 
-      client.sendMetric(event: MetricsEvent.screenOpen, screen: 'home');
-      client.sendMetric(
-        event: MetricsEvent.appRender,
-        screen: 'home',
-        renderTimeMs: 20,
-        frameDropped: true,
-      );
+        client.sendMetric(event: MetricsEvent.screenOpen, screen: 'home');
+        client.sendMetric(
+          event: MetricsEvent.appRender,
+          screen: 'home',
+          renderTimeMs: 20,
+          frameDropped: true,
+        );
 
-      await client.flush();
+        await client.flush();
 
-      expect(adapter.requests, hasLength(1));
-      final request = adapter.requests.single;
-      expect(request.path, '/metrics/batch');
+        expect(adapter.requests, hasLength(1));
+        final request = adapter.requests.single;
+        expect(request.path, '/metrics/batch');
 
-      final body = request.data as Map<String, dynamic>;
-      final metrics = body['metrics'] as List;
-      expect(metrics, hasLength(2));
-      expect(metrics[0]['event'], MetricsEvent.screenOpen);
-      expect(metrics[0]['screen'], 'home');
-      expect(metrics[0]['client_timestamp'], isA<String>());
-      expect(metrics[1]['event'], MetricsEvent.appRender);
-      expect(metrics[1]['render_time'], 20);
-      expect(metrics[1]['frame_dropped'], true);
-    });
+        final body = request.data as Map<String, dynamic>;
+        final metrics = body['metrics'] as List;
+        expect(metrics, hasLength(2));
+        expect(metrics[0]['event'], MetricsEvent.screenOpen);
+        expect(metrics[0]['screen'], 'home');
+        expect(metrics[0]['client_timestamp'], isA<String>());
+        expect(metrics[1]['event'], MetricsEvent.appRender);
+        expect(metrics[1]['render_time'], 20);
+        expect(metrics[1]['frame_dropped'], true);
+      },
+    );
 
     test('flush with an empty buffer sends nothing', () async {
       final adapter = _RecordingAdapter();
@@ -140,8 +142,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(adapter.requests, hasLength(1));
-      final metrics = (adapter.requests.single.data
-          as Map<String, dynamic>)['metrics'] as List;
+      final metrics =
+          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
+              as List;
       expect(metrics, hasLength(2));
     });
 
@@ -232,8 +235,9 @@ void main() {
       await client.flush();
 
       expect(adapter.requests, hasLength(1));
-      final metrics = (adapter.requests.single.data
-          as Map<String, dynamic>)['metrics'] as List;
+      final metrics =
+          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
+              as List;
       expect(metrics, hasLength(1));
       expect(metrics.single['event'], MetricsEvent.crash);
     });
@@ -259,8 +263,9 @@ void main() {
       }
       await client.flush();
 
-      final metrics = (adapter.requests.single.data
-          as Map<String, dynamic>)['metrics'] as List;
+      final metrics =
+          (adapter.requests.single.data as Map<String, dynamic>)['metrics']
+              as List;
       expect(metrics, hasLength(5));
     });
   });
@@ -299,8 +304,10 @@ void main() {
       await api.get('/users/42');
       await metrics.flush();
 
-      final batch = (metricsAdapter.requests.single.data
-          as Map<String, dynamic>)['metrics'] as List;
+      final batch =
+          (metricsAdapter.requests.single.data
+                  as Map<String, dynamic>)['metrics']
+              as List;
       expect(batch, hasLength(1));
       expect(batch.single['event'], MetricsEvent.apiCall);
       expect(batch.single['screen'], '/users/42');
@@ -323,8 +330,10 @@ void main() {
       await expectLater(api.get('/users/42'), throwsA(isA<DioException>()));
       await metrics.flush();
 
-      final batch = (metricsAdapter.requests.single.data
-          as Map<String, dynamic>)['metrics'] as List;
+      final batch =
+          (metricsAdapter.requests.single.data
+                  as Map<String, dynamic>)['metrics']
+              as List;
       expect(batch, hasLength(1));
       expect(batch.single['event'], MetricsEvent.apiError);
       expect(batch.single['is_error'], true);
@@ -332,38 +341,41 @@ void main() {
   });
 
   group('CrashTracker', () {
-    test('reports an app_crash event when FlutterError.onError fires',
-        () async {
-      final adapter = _RecordingAdapter();
-      final metrics = MetricsClient(
-        apiKey: 'test-key',
-        baseUrl: 'https://example.test',
-        httpClient: _dioWithAdapter(adapter),
-        attachLifecycleObserver: false,
-        flushInterval: const Duration(minutes: 5),
-      );
+    test(
+      'reports an app_crash event when FlutterError.onError fires',
+      () async {
+        final adapter = _RecordingAdapter();
+        final metrics = MetricsClient(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.test',
+          httpClient: _dioWithAdapter(adapter),
+          attachLifecycleObserver: false,
+          flushInterval: const Duration(minutes: 5),
+        );
 
-      final originalOnError = FlutterError.onError;
-      final originalPlatformOnError = PlatformDispatcher.instance.onError;
-      addTearDown(() {
-        FlutterError.onError = originalOnError;
-        PlatformDispatcher.instance.onError = originalPlatformOnError;
-      });
+        final originalOnError = FlutterError.onError;
+        final originalPlatformOnError = PlatformDispatcher.instance.onError;
+        addTearDown(() {
+          FlutterError.onError = originalOnError;
+          PlatformDispatcher.instance.onError = originalPlatformOnError;
+        });
 
-      CrashTracker.initialize(metrics);
+        CrashTracker.initialize(metrics);
 
-      FlutterError.onError!(
-        FlutterErrorDetails(exception: Exception('boom')),
-      );
+        FlutterError.onError!(
+          FlutterErrorDetails(exception: Exception('boom')),
+        );
 
-      await metrics.flush();
+        await metrics.flush();
 
-      final batch = (adapter.requests.single.data
-          as Map<String, dynamic>)['metrics'] as List;
-      expect(batch, hasLength(1));
-      expect(batch.single['event'], MetricsEvent.crash);
-      expect(batch.single['is_error'], true);
-      expect(batch.single['error_message'], contains('boom'));
-    });
+        final batch =
+            (adapter.requests.single.data as Map<String, dynamic>)['metrics']
+                as List;
+        expect(batch, hasLength(1));
+        expect(batch.single['event'], MetricsEvent.crash);
+        expect(batch.single['is_error'], true);
+        expect(batch.single['error_message'], contains('boom'));
+      },
+    );
   });
 }

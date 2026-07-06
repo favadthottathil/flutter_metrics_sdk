@@ -27,10 +27,7 @@ void main() {
   final frameTracker = FrameTracker(metrics)..startTrackingMetrics();
   final screenTracker = ScreenTracker(metrics, frameTracker: frameTracker);
 
-  runApp(MetricsExampleApp(
-    metrics: metrics,
-    screenTracker: screenTracker,
-  ));
+  runApp(MetricsExampleApp(metrics: metrics, screenTracker: screenTracker));
 }
 
 class MetricsExampleApp extends StatelessWidget {

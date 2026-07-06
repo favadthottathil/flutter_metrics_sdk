@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flutter-version: ["3.19.x", "3.22.x", "3.24.x"]
+        flutter-version: ["3.32.x", "3.38.x", "3.44.x"]
 
     steps:
       - uses: actions/checkout@v4
@@ -33,25 +33,31 @@ jobs:
 
       - run: flutter pub get
 
-      - run: dart format --set-exit-if-changed .
+      - name: Check formatting
+        if: matrix.flutter-version == '3.44.x'
+        run: dart format --set-exit-if-changed .
 
       - run: flutter analyze --fatal-warnings --fatal-infos
 
       - run: flutter test --coverage
 
       - uses: codecov/codecov-action@v3
+        if: matrix.flutter-version == '3.44.x'
         with:
           token: ${{secrets.CODECOV_TOKEN}}
           file: coverage/lcov.info
           fail_ci_if_error: true
 
       - run: flutter pub get
+        if: matrix.flutter-version == '3.44.x'
         working-directory: example
 
       - run: flutter build apk --debug
+        if: matrix.flutter-version == '3.44.x'
         working-directory: example
 
       - uses: actions/upload-artifact@v4
+        if: matrix.flutter-version == '3.44.x'
         with:
           name: debug-apk
           path: example/build/app/outputs/flutter-apk/app-debug.apk
