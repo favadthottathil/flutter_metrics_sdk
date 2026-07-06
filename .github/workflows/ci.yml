@@ -1,22 +1,26 @@
 name: CI
 
-on: 
+on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter-version: ["3.19.x", "3.22.x", "3.24.x"]
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
-        with: 
-          flutter-version: '3.44.3'
-          channel: 'stable'
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          channel: "stable"
 
       - uses: actions/cache@v3
         with:
@@ -25,10 +29,8 @@ jobs:
             .dart_tool
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pub-  
-              
+            ${{ runner.os }}-pub-
 
-      
       - run: flutter pub get
 
       - run: dart format --set-exit-if-changed .
