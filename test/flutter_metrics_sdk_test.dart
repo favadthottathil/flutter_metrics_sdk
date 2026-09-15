@@ -252,25 +252,28 @@ void main() {
       expect(adapter.requests, hasLength(1));
     });
 
-    test('buffer is capped so an offline device cannot grow it forever', () async {
-      // Every flush fails, so nothing drains: without a cap the buffer would
-      // grow without bound while the device is offline.
-      final client = MetricsClient(
-        apiKey: 'test-key',
-        baseUrl: 'https://example.test',
-        httpClient: _dioWithAdapter(_FailingAdapter()),
-        attachLifecycleObserver: false,
-        flushInterval: const Duration(minutes: 5),
-        maxBufferSize: 5,
-      );
+    test(
+      'buffer is capped so an offline device cannot grow it forever',
+      () async {
+        // Every flush fails, so nothing drains: without a cap the buffer would
+        // grow without bound while the device is offline.
+        final client = MetricsClient(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.test',
+          httpClient: _dioWithAdapter(_FailingAdapter()),
+          attachLifecycleObserver: false,
+          flushInterval: const Duration(minutes: 5),
+          maxBufferSize: 5,
+        );
 
-      for (var i = 0; i < 50; i++) {
-        client.sendMetric(event: MetricsEvent.screenOpen, screen: 'home');
-        await Future<void>.delayed(Duration.zero);
-      }
+        for (var i = 0; i < 50; i++) {
+          client.sendMetric(event: MetricsEvent.screenOpen, screen: 'home');
+          await Future<void>.delayed(Duration.zero);
+        }
 
-      expect(client.bufferedCount, lessThanOrEqualTo(5));
-    });
+        expect(client.bufferedCount, lessThanOrEqualTo(5));
+      },
+    );
 
     test('disabled client does not buffer or send metrics', () async {
       final adapter = _RecordingAdapter();
@@ -397,65 +400,71 @@ void main() {
   });
 
   group('ApiMetricsInterceptor', () {
-    test('reports the endpoint as target and the active screen as screen', () async {
-      final metricsAdapter = _RecordingAdapter();
-      final metrics = MetricsClient(
-        apiKey: 'test-key',
-        baseUrl: 'https://example.test',
-        httpClient: _dioWithAdapter(metricsAdapter),
-        attachLifecycleObserver: false,
-        flushInterval: const Duration(minutes: 5),
-      );
+    test(
+      'reports the endpoint as target and the active screen as screen',
+      () async {
+        final metricsAdapter = _RecordingAdapter();
+        final metrics = MetricsClient(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.test',
+          httpClient: _dioWithAdapter(metricsAdapter),
+          attachLifecycleObserver: false,
+          flushInterval: const Duration(minutes: 5),
+        );
 
-      final screenContext = ScreenContext()..setCurrentScreen('/checkout');
+        final screenContext = ScreenContext()..setCurrentScreen('/checkout');
 
-      final apiAdapter = _RecordingAdapter();
-      final api = _dioWithAdapter(apiAdapter);
-      api.interceptors.add(
-        ApiMetricsInterceptor(metrics, screenContext: screenContext),
-      );
+        final apiAdapter = _RecordingAdapter();
+        final api = _dioWithAdapter(apiAdapter);
+        api.interceptors.add(
+          ApiMetricsInterceptor(metrics, screenContext: screenContext),
+        );
 
-      await api.get('/users/42');
-      await metrics.flush();
+        await api.get('/users/42');
+        await metrics.flush();
 
-      final batch =
-          (metricsAdapter.requests.single.data
-                  as Map<String, dynamic>)['metrics']
-              as List;
-      expect(batch, hasLength(1));
-      expect(batch.single['event'], MetricsEvent.apiCall);
-      // The endpoint must not masquerade as a screen, or it creates a
-      // phantom screen in the dashboard's per-screen breakdown.
-      expect(batch.single['screen'], '/checkout');
-      expect(batch.single['target'], '/users/42');
-      expect(batch.single['api_latency'], isA<int>());
-    });
+        final batch =
+            (metricsAdapter.requests.single.data
+                    as Map<String, dynamic>)['metrics']
+                as List;
+        expect(batch, hasLength(1));
+        expect(batch.single['event'], MetricsEvent.apiCall);
+        // The endpoint must not masquerade as a screen, or it creates a
+        // phantom screen in the dashboard's per-screen breakdown.
+        expect(batch.single['screen'], '/checkout');
+        expect(batch.single['target'], '/users/42');
+        expect(batch.single['api_latency'], isA<int>());
+      },
+    );
 
-    test('falls back to the unknown screen before any route is observed', () async {
-      final metricsAdapter = _RecordingAdapter();
-      final metrics = MetricsClient(
-        apiKey: 'test-key',
-        baseUrl: 'https://example.test',
-        httpClient: _dioWithAdapter(metricsAdapter),
-        attachLifecycleObserver: false,
-        flushInterval: const Duration(minutes: 5),
-      );
+    test(
+      'falls back to the unknown screen before any route is observed',
+      () async {
+        final metricsAdapter = _RecordingAdapter();
+        final metrics = MetricsClient(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.test',
+          httpClient: _dioWithAdapter(metricsAdapter),
+          attachLifecycleObserver: false,
+          flushInterval: const Duration(minutes: 5),
+        );
 
-      final api = _dioWithAdapter(_RecordingAdapter());
-      api.interceptors.add(
-        ApiMetricsInterceptor(metrics, screenContext: ScreenContext()),
-      );
+        final api = _dioWithAdapter(_RecordingAdapter());
+        api.interceptors.add(
+          ApiMetricsInterceptor(metrics, screenContext: ScreenContext()),
+        );
 
-      await api.get('/ping');
-      await metrics.flush();
+        await api.get('/ping');
+        await metrics.flush();
 
-      final batch =
-          (metricsAdapter.requests.single.data
-                  as Map<String, dynamic>)['metrics']
-              as List;
-      expect(batch.single['screen'], ScreenContext.unknownScreen);
-      expect(batch.single['target'], '/ping');
-    });
+        final batch =
+            (metricsAdapter.requests.single.data
+                    as Map<String, dynamic>)['metrics']
+                as List;
+        expect(batch.single['screen'], ScreenContext.unknownScreen);
+        expect(batch.single['target'], '/ping');
+      },
+    );
 
     test('records an api_error event for a failed request', () async {
       final metricsAdapter = _RecordingAdapter();
