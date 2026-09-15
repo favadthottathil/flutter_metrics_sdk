@@ -1,10 +1,15 @@
 import 'package:dio/dio.dart';
 import 'metrics_client.dart';
 import 'metrics_event.dart';
+import 'screen_context.dart';
 
 /// A Dio [Interceptor] that measures the latency of every request made
 /// through the interceptor's [Dio] instance and reports it as either an
 /// [MetricsEvent.apiCall] or [MetricsEvent.apiError] event.
+///
+/// The request path is reported as the event's `target`, while `screen`
+/// holds the screen that was visible when the request completed, so API
+/// latency is attributed to the screen that incurred it.
 ///
 /// Add it to a [Dio] client's interceptors:
 ///
@@ -13,21 +18,22 @@ import 'metrics_event.dart';
 /// ```
 class ApiMetricsInterceptor extends Interceptor {
   final MetricsClient client;
-  final Map<RequestOptions, DateTime> _startTimes = {};
 
-  /// Safety cap on the number of in-flight requests tracked at once.
-  /// Prevents unbounded growth if a request never reaches [onResponse]
-  /// or [onError] (e.g. it is dropped without completing).
-  static const int _maxTrackedRequests = 200;
+  /// Supplies the screen that is currently visible. Defaults to the
+  /// ambient [ScreenContext], which [ScreenTracker] keeps up to date.
+  final ScreenContext _screenContext;
 
-  ApiMetricsInterceptor(this.client);
+  /// Start times are keyed by a token stored on the request itself rather
+  /// than by [RequestOptions] identity, because Dio reuses (and sometimes
+  /// copies) the options object across retries and redirects.
+  static const String _startTimeKey = '_metricsSdkStartedAtMicros';
+
+  ApiMetricsInterceptor(this.client, {ScreenContext? screenContext})
+    : _screenContext = screenContext ?? ScreenContext.instance;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (_startTimes.length >= _maxTrackedRequests) {
-      _startTimes.remove(_startTimes.keys.first);
-    }
-    _startTimes[options] = DateTime.now();
+    options.extra[_startTimeKey] = DateTime.now().microsecondsSinceEpoch;
     super.onRequest(options, handler);
   }
 
@@ -54,14 +60,20 @@ class ApiMetricsInterceptor extends Interceptor {
     bool isError = false,
     String? errorMessage,
   }) {
-    final startTime = _startTimes.remove(options);
-    if (startTime == null) return;
+    final startedAt = options.extra[_startTimeKey];
+    if (startedAt is! int) return;
 
-    final latencyMs = DateTime.now().difference(startTime).inMilliseconds;
+    // Consumed so a retried request cannot report the original start time.
+    options.extra.remove(_startTimeKey);
+
+    final latencyMs =
+        (DateTime.now().microsecondsSinceEpoch - startedAt) ~/
+        Duration.microsecondsPerMillisecond;
 
     client.sendMetric(
       event: isError ? MetricsEvent.apiError : MetricsEvent.apiCall,
-      screen: options.path, // Using path as the target for API requests
+      screen: _screenContext.currentScreen,
+      target: options.path,
       apiLatencyMs: latencyMs,
       isError: isError,
       errorMessage: errorMessage ?? (isError ? 'API Error $statusCode' : null),

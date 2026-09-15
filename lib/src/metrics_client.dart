@@ -26,12 +26,18 @@ class MetricsClient with WidgetsBindingObserver {
   final Dio _dio;
   bool _enabled;
   final int _maxBatchSize;
+  final int _maxBufferSize;
   final double _sampleRate;
   final Random _random = Random();
 
   final List<MetricRecord> _buffer = [];
   Timer? _flushTimer;
   bool _observerAttached = false;
+
+  /// Guards against two flushes running at once — the periodic timer and a
+  /// [maxBatchSize] trip can otherwise overlap, letting the second call
+  /// observe a buffer the first has already taken.
+  bool _flushInProgress = false;
 
   /// Creates a new client and starts its periodic flush timer.
   ///
@@ -41,6 +47,9 @@ class MetricsClient with WidgetsBindingObserver {
   /// - [enabled]: when `false`, all calls to [sendMetric] are no-ops.
   /// - [maxBatchSize]: number of buffered events that triggers an
   ///   immediate flush, independent of [flushInterval]. Defaults to `20`.
+  /// - [maxBufferSize]: hard cap on buffered events. Once reached, the
+  ///   oldest events are discarded to bound memory use while the device is
+  ///   offline. Defaults to `1000`.
   /// - [flushInterval]: how often buffered events are flushed to the
   ///   backend even if [maxBatchSize] hasn't been reached. Defaults to
   ///   5 seconds.
@@ -58,12 +67,16 @@ class MetricsClient with WidgetsBindingObserver {
     required String baseUrl,
     bool enabled = true,
     int maxBatchSize = 20,
+    int maxBufferSize = 1000,
     Duration flushInterval = const Duration(seconds: 5),
     double sampleRate = 1.0,
     bool attachLifecycleObserver = true,
     @visibleForTesting Dio? httpClient,
   }) : _enabled = enabled,
-       _maxBatchSize = maxBatchSize,
+       // The cap is authoritative: it is the memory bound, so a large
+       // maxBatchSize is clamped to it rather than overriding it.
+       _maxBatchSize = min(maxBatchSize, maxBufferSize),
+       _maxBufferSize = maxBufferSize,
        _sampleRate = sampleRate.clamp(0.0, 1.0),
        _dio =
            httpClient ??
@@ -93,17 +106,27 @@ class MetricsClient with WidgetsBindingObserver {
   /// buffer is not flushed.
   void disable() => _enabled = false;
 
+  /// Number of events currently buffered awaiting delivery.
+  @visibleForTesting
+  int get bufferedCount => _buffer.length;
+
   /// Queues a telemetry event for delivery.
   ///
   /// Events are not sent immediately — they are buffered and delivered in
   /// batches by [flush], which runs periodically and whenever the buffer
   /// reaches its configured `maxBatchSize`.
   ///
+  /// [screen] must always name a real, user-visible screen. For events
+  /// whose subject is something else — an endpoint path, an error handler
+  /// — pass that as [target] so the backend can attribute the event to the
+  /// screen it happened on without inventing a phantom screen for it.
+  ///
   /// Frame-render events ([MetricsEvent.appRender]) are subject to
   /// [sampleRate]; all other event types are always queued.
   void sendMetric({
     required String event,
     required String screen,
+    String? target,
     int? frameTimeMs,
     bool? frameDropped,
     int? renderTimeMs,
@@ -120,10 +143,18 @@ class MetricsClient with WidgetsBindingObserver {
       if (_random.nextDouble() > _sampleRate) return;
     }
 
+    // Bound memory growth when the device is offline for a long time.
+    // Oldest events are dropped first: recent telemetry is the more useful
+    // signal, and an unbounded buffer would eventually exhaust the heap.
+    if (_buffer.length >= _maxBufferSize) {
+      _buffer.removeRange(0, _buffer.length - _maxBufferSize + 1);
+    }
+
     _buffer.add(
       MetricRecord(
         event: event,
         screen: screen,
+        target: target,
         frameTimeMs: frameTimeMs,
         frameDropped: frameDropped,
         renderTimeMs: renderTimeMs,
@@ -145,10 +176,14 @@ class MetricsClient with WidgetsBindingObserver {
   ///
   /// Safe to call manually (e.g. before navigating away from the app).
   /// Failures are swallowed by design — telemetry must never crash or
-  /// block the host app — and the events involved in a failed flush are
-  /// dropped rather than retried, to avoid unbounded buffer growth.
+  /// block the host app. Events lost to a *transient* failure (network
+  /// error, timeout, 5xx) are returned to the front of the buffer and
+  /// retried on the next flush; events rejected outright (4xx) are dropped,
+  /// since retrying them would never succeed.
   Future<void> flush() async {
-    if (!_enabled || _buffer.isEmpty) return;
+    if (!_enabled || _buffer.isEmpty || _flushInProgress) return;
+
+    _flushInProgress = true;
 
     final batch = List<MetricRecord>.from(_buffer);
     _buffer.clear();
@@ -158,8 +193,34 @@ class MetricsClient with WidgetsBindingObserver {
         '/metrics/batch',
         data: {'metrics': batch.map((m) => m.toJson()).toList()},
       );
-    } catch (e) {
-      // Silent failure (by design)
+    } on DioException catch (e) {
+      if (_isRetryable(e)) {
+        _requeue(batch);
+      }
+      // Non-retryable (4xx): the payload is rejected, so it is dropped.
+    } catch (_) {
+      // Unexpected local failure (e.g. serialization). Dropped by design —
+      // telemetry must never crash or block the host app.
+    } finally {
+      _flushInProgress = false;
+    }
+  }
+
+  /// Whether a failed request is worth retrying. Anything that is not a
+  /// definitive rejection by the server is treated as transient.
+  static bool _isRetryable(DioException e) {
+    final status = e.response?.statusCode;
+    if (status == null) return true; // network error, timeout, no response
+    return status >= 500 || status == 408 || status == 429;
+  }
+
+  /// Returns a failed batch to the front of the buffer, preserving event
+  /// order, while respecting the buffer cap.
+  void _requeue(List<MetricRecord> batch) {
+    _buffer.insertAll(0, batch);
+
+    if (_buffer.length > _maxBufferSize) {
+      _buffer.removeRange(0, _buffer.length - _maxBufferSize);
     }
   }
 

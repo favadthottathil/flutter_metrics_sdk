@@ -34,7 +34,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_metrics_sdk: ^1.2.0
+  flutter_metrics_sdk: ^1.3.0
 ```
 
 Then run:
@@ -80,6 +80,7 @@ final metrics = MetricsClient(
   // Buffering & batching (controls overhead)
   flushInterval: const Duration(seconds: 5), // default
   maxBatchSize: 20,                          // default
+  maxBufferSize: 1000,                       // default; caps memory while offline
   sampleRate: 1.0,                           // 0.0-1.0, applies to frame-render events only
 );
 
@@ -145,6 +146,35 @@ single request when **either**:
 
 whichever happens first. The buffer is also flushed automatically when the
 app is paused, inactive or detached.
+
+A flush that fails for a **transient** reason — network error, timeout, a
+`5xx` or `429` response — returns its events to the buffer and retries on the
+next flush, so a brief connectivity blip loses no telemetry. A definitive
+`4xx` rejection drops the batch, since retrying it would never succeed.
+`maxBufferSize` (default `1000`) bounds how much is retained while the device
+is offline; once reached, the oldest events are discarded.
+
+---
+
+## 🧭 `screen` vs `target`
+
+`screen` always names a real, user-visible screen. `target` records what an
+event acted on when that is something else:
+
+| Event | `screen` | `target` |
+|---|---|---|
+| `screen_open`, `app_render` | the screen | — |
+| `api_call`, `api_error` | screen that made the call | request path |
+| `app_crash` | screen that was visible | error handler name |
+
+`ScreenTracker` keeps a shared `ScreenContext` up to date, and both
+`ApiMetricsInterceptor` and `CrashTracker` read from it — so network and crash
+events are attributed to the screen the user was actually on, instead of each
+endpoint becoming its own phantom "screen" in the dashboard.
+
+For a screen that isn't reachable via the `Navigator` (such as the first
+screen shown before any route is pushed), call `screenTracker.trackScreen('home')`
+so attribution starts correctly.
 
 ---
 

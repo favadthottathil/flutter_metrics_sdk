@@ -3,8 +3,20 @@
 /// Instances are created internally by [MetricsClient.sendMetric] and
 /// serialized via [toJson] when a batch is flushed.
 class MetricRecord {
-  final String event;
+  /// The user-visible screen this event occurred on.
+  ///
+  /// This is always a real screen, never an endpoint path or an error
+  /// handler name — see [target] for those.
   final String screen;
+
+  /// What the event acted on, when that differs from the screen: the
+  /// request path for API events, or the handler name for crashes.
+  ///
+  /// `null` for events whose subject *is* the screen, such as
+  /// screen-open and frame-render events.
+  final String? target;
+
+  final String event;
   final int? frameTimeMs;
   final bool? frameDropped;
   final int? renderTimeMs;
@@ -18,6 +30,7 @@ class MetricRecord {
   MetricRecord({
     required this.event,
     required this.screen,
+    this.target,
     this.frameTimeMs,
     this.frameDropped,
     this.renderTimeMs,
@@ -35,6 +48,7 @@ class MetricRecord {
     return {
       'event': event,
       'screen': screen,
+      if (target != null) 'target': target,
       if (frameTimeMs != null) 'frame_time': frameTimeMs,
       if (frameDropped != null) 'frame_dropped': frameDropped,
       if (renderTimeMs != null) 'render_time': renderTimeMs,

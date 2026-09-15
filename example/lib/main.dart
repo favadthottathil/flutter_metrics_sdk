@@ -27,6 +27,11 @@ void main() {
   final frameTracker = FrameTracker(metrics)..startTrackingMetrics();
   final screenTracker = ScreenTracker(metrics, frameTracker: frameTracker);
 
+  // The home screen is shown before any route is pushed, so the Navigator
+  // never reports it. Naming it here means API calls and crashes that happen
+  // on it are attributed to 'home' rather than to the unknown screen.
+  screenTracker.trackScreen('home');
+
   runApp(MetricsExampleApp(metrics: metrics, screenTracker: screenTracker));
 }
 
